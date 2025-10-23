@@ -51,7 +51,7 @@ contract MerkleAirdrop is IMerkleAirdrop, Ownable {
         bytes32 merkleRoot_,
         string memory metadataURI_,
         uint256 totalAmount_
-    ) Ownable() {
+    ) Ownable(owner_) {
         require(token_ != address(0), "MerkleAirdrop: token cannot be zero address");
         require(owner_ != address(0), "MerkleAirdrop: owner cannot be zero address");
         require(merkleRoot_ != bytes32(0), "MerkleAirdrop: merkle root cannot be zero");
@@ -64,8 +64,6 @@ contract MerkleAirdrop is IMerkleAirdrop, Ownable {
         claimDeadline = block.timestamp + 7 days;
         unlockTimestamp = block.timestamp + 7 days;
 
-        // Set the owner manually since Ownable constructor doesn't take parameters in v5
-        _transferOwnership(owner_);
 
         emit Initialized(
             token_,

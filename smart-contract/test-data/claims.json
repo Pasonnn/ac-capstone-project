@@ -1,0 +1,121 @@
+{
+  "metadata": {
+    "name": "Test Airdrop Campaign",
+    "description": "A test airdrop campaign for demonstration purposes",
+    "token": "0x0000000000000000000000000000000000000000",
+    "merkleRoot": "0x6d43c20abc208559dd970943ba3fffff9c66d3c9ec1804e93958db82a377c2d8",
+    "totalAmount": "2125000000000000000000",
+    "claimDeadline": 1761812918,
+    "unlockTimestamp": 1761812918,
+    "createdAt": 1761208118,
+    "version": "1.0.0"
+  },
+  "claims": [
+    {
+      "index": 0,
+      "account": "0x1234567890123456789012345678901234567890",
+      "amount": "100000000000000000000",
+      "proof": [
+        "0x24920223f30fcc619dfc6409240274b48e55ef890a54cae81f4609141c445137",
+        "0x2da1669d808b3db70f0788e50d86c91a6ddc48f0f7594958cb32935e58e305cc",
+        "0x9de7836ac987be868253a2604732bf4a09541acfc29be1970ba1ddb57d936a23",
+        "0x49d05ea8ab3ac0a2062bccd591ae3f7ecfde5aacc0b68bc0245de80778e3e1f4"
+      ]
+    },
+    {
+      "index": 1,
+      "account": "0x2345678901234567890123456789012345678901",
+      "amount": "200000000000000000000",
+      "proof": [
+        "0x779ccfbcb128b24adfbe11fbedcd4d45eca802bbd85f21b9fe0669874282b9f5",
+        "0x2da1669d808b3db70f0788e50d86c91a6ddc48f0f7594958cb32935e58e305cc",
+        "0x9de7836ac987be868253a2604732bf4a09541acfc29be1970ba1ddb57d936a23",
+        "0x49d05ea8ab3ac0a2062bccd591ae3f7ecfde5aacc0b68bc0245de80778e3e1f4"
+      ]
+    },
+    {
+      "index": 2,
+      "account": "0x3456789012345678901234567890123456789012",
+      "amount": "300000000000000000000",
+      "proof": [
+        "0x5a5a8f557b5873dfd26d89dff9e22edd9bda67bb9f8c57a03a787827fc0743d9",
+        "0x8afd94d60c1e70f81e2011e102667b4976642096ddab95cf591ca9abc2763ccc",
+        "0x9de7836ac987be868253a2604732bf4a09541acfc29be1970ba1ddb57d936a23",
+        "0x49d05ea8ab3ac0a2062bccd591ae3f7ecfde5aacc0b68bc0245de80778e3e1f4"
+      ]
+    },
+    {
+      "index": 3,
+      "account": "0x4567890123456789012345678901234567890123",
+      "amount": "150000000000000000000",
+      "proof": [
+        "0xd517456ed41cfc486e77adefc8e4f8d25636fc51b7a4359a13bbb990a24256d8",
+        "0x8afd94d60c1e70f81e2011e102667b4976642096ddab95cf591ca9abc2763ccc",
+        "0x9de7836ac987be868253a2604732bf4a09541acfc29be1970ba1ddb57d936a23",
+        "0x49d05ea8ab3ac0a2062bccd591ae3f7ecfde5aacc0b68bc0245de80778e3e1f4"
+      ]
+    },
+    {
+      "index": 4,
+      "account": "0x5678901234567890123456789012345678901234",
+      "amount": "250000000000000000000",
+      "proof": [
+        "0xe5a0284520507cdc7796b17efe43a736a218b19781c5870c25ee25f4ce01559e",
+        "0xc0ab222a1d53326f5fbdb7f64de1caa0f7afc8eed244913da43f8055a843f6e2",
+        "0x786bb6f85e4ef5da8ac24665ce0c726b78b2e3ece6bc7c41d2600f0b0e5b6063",
+        "0x49d05ea8ab3ac0a2062bccd591ae3f7ecfde5aacc0b68bc0245de80778e3e1f4"
+      ]
+    },
+    {
+      "index": 5,
+      "account": "0x6789012345678901234567890123456789012345",
+      "amount": "175000000000000000000",
+      "proof": [
+        "0x93d200f26b3bcf3b7793dc1c7053b4bb2e98fb02d76832d97720ffdffea55cab",
+        "0xc0ab222a1d53326f5fbdb7f64de1caa0f7afc8eed244913da43f8055a843f6e2",
+        "0x786bb6f85e4ef5da8ac24665ce0c726b78b2e3ece6bc7c41d2600f0b0e5b6063",
+        "0x49d05ea8ab3ac0a2062bccd591ae3f7ecfde5aacc0b68bc0245de80778e3e1f4"
+      ]
+    },
+    {
+      "index": 6,
+      "account": "0x7890123456789012345678901234567890123456",
+      "amount": "125000000000000000000",
+      "proof": [
+        "0xaf946b0cba22316ed36dfae9be3811a42976c32ff3fb68ce94384c4e46c24534",
+        "0x00b77e4ed4e8b07b0b2d15b94783668f2f1a8da012f0686344cd962e7f3547be",
+        "0x786bb6f85e4ef5da8ac24665ce0c726b78b2e3ece6bc7c41d2600f0b0e5b6063",
+        "0x49d05ea8ab3ac0a2062bccd591ae3f7ecfde5aacc0b68bc0245de80778e3e1f4"
+      ]
+    },
+    {
+      "index": 7,
+      "account": "0x8901234567890123456789012345678901234567",
+      "amount": "225000000000000000000",
+      "proof": [
+        "0x30956abb6f721be51309ec71f42442e6547ae2660dd1b00866353f7417f7dbdc",
+        "0x00b77e4ed4e8b07b0b2d15b94783668f2f1a8da012f0686344cd962e7f3547be",
+        "0x786bb6f85e4ef5da8ac24665ce0c726b78b2e3ece6bc7c41d2600f0b0e5b6063",
+        "0x49d05ea8ab3ac0a2062bccd591ae3f7ecfde5aacc0b68bc0245de80778e3e1f4"
+      ]
+    },
+    {
+      "index": 8,
+      "account": "0x9012345678901234567890123456789012345678",
+      "amount": "275000000000000000000",
+      "proof": [
+        "0xc15e1d74b55bd0657323d6b056591b10dd6da647059312a8946c8f33a3569380",
+        "0xf8117e7e6813d944371a29fd6fbd70efd4ffccabe3067cbab949b9c66ac89c5b"
+      ]
+    },
+    {
+      "index": 9,
+      "account": "0x0123456789012345678901234567890123456789",
+      "amount": "325000000000000000000",
+      "proof": [
+        "0xcd7daccb9286e4a993139a1ea8a94ff9fa3d54c7c4f0426464ed407e02c2beca",
+        "0xf8117e7e6813d944371a29fd6fbd70efd4ffccabe3067cbab949b9c66ac89c5b"
+      ]
+    }
+  ]
+}

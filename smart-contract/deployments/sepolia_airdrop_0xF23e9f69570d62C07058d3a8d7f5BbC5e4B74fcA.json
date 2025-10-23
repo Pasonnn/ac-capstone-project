@@ -1,0 +1,57 @@
+{
+  "timestamp": 1761210038,
+  "network": "sepolia",
+  "airdropAddress": "0xF23e9f69570d62C07058d3a8d7f5BbC5e4B74fcA",
+  "token": "0xB08193dEFBBB17D5248AA92298d263a71Ae4479A",
+  "factory": "0x43EdE8a62863eC3455e0309Ea46296A7494c489C",
+  "merkleRoot": "0x039fc7f8230047eb544cfc2ec8479e754ca45985bd0029de1330d36b98e3211d",
+  "metadataURI": "ipfs://QmYourIPFSCIDHere",
+  "totalAmount": "1000000000000000000000",
+  "recipients": 5,
+  "claims": {
+    "0x1234567890123456789012345678901234567890": {
+      "index": 0,
+      "amount": "100000000000000000000",
+      "proof": [
+        "0x66ab1eb7ad5a922c3751398afcd2a82d8092f0250baaaf869f26535d834dd401",
+        "0x7b6fe6c615586f9e4fbbd67431c915a7e5588c4f51118246b80c3162b684ae72",
+        "0xb81f4934b5b536ce89582f9f6e702785f7901f1d8c2b165872190335e0197c1b"
+      ]
+    },
+    "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd": {
+      "index": 1,
+      "amount": "250000000000000000000",
+      "proof": [
+        "0xdf34e86bea1abf97f5719d26c1edf7d56248180c28ecc87692db32f8538953fd",
+        "0x7b6fe6c615586f9e4fbbd67431c915a7e5588c4f51118246b80c3162b684ae72",
+        "0xb81f4934b5b536ce89582f9f6e702785f7901f1d8c2b165872190335e0197c1b"
+      ]
+    },
+    "0x9876543210987654321098765432109876543210": {
+      "index": 2,
+      "amount": "150000000000000000000",
+      "proof": [
+        "0x5bee76f094516df9cfd345f2d253d20ef5b9fbc6618213f8832a35fc4b56e368",
+        "0x89995067b11a90a5e427d3bf57b3c5e51dc6c8811f17ac44e6eb38e7b099a93e",
+        "0xb81f4934b5b536ce89582f9f6e702785f7901f1d8c2b165872190335e0197c1b"
+      ]
+    },
+    "0xfedcba9876543210fedcba9876543210fedcba98": {
+      "index": 3,
+      "amount": "200000000000000000000",
+      "proof": [
+        "0xd444566c1321f0cde4af2ea27b49d0ea64b79ffdb325c50594094fa4bf1bc63e",
+        "0x89995067b11a90a5e427d3bf57b3c5e51dc6c8811f17ac44e6eb38e7b099a93e",
+        "0xb81f4934b5b536ce89582f9f6e702785f7901f1d8c2b165872190335e0197c1b"
+      ]
+    },
+    "0x1111111111111111111111111111111111111111": {
+      "index": 4,
+      "amount": "300000000000000000000",
+      "proof": [
+        "0xfa033d33b7b056a3b9e41a72350f006bee3414f97c97936293083ecd2ce6e4f0"
+      ]
+    }
+  },
+  "deployer": "0x09e23052d4a07D38C85C35Af34c9e1d0555243EE"
+}

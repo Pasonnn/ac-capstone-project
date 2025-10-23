@@ -1,0 +1,42 @@
+{
+  "name": "smart-contract",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "npx hardhat test",
+    "test:flow": "npx hardhat test test/AirdropFlow.test.ts",
+    "deploy:demo": "npx hardhat run scripts/deployAndTest.ts --network localhost",
+    "generate:data": "npx hardhat run scripts/generateTestData.ts --network localhost",
+    "compile": "npx hardhat compile",
+    "clean": "npx hardhat clean",
+    "deploy:sepolia": "npx hardhat run scripts/deploy-sepolia.ts --network sepolia",
+    "create:airdrop": "npx hardhat run scripts/create-airdrop-sepolia.ts --network sepolia",
+    "claim:airdrop": "npx hardhat run scripts/claim-airdrop.ts --network sepolia"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-chai-matchers": "^2.1.0",
+    "@nomicfoundation/hardhat-ethers": "^3.1.0",
+    "@nomicfoundation/hardhat-network-helpers": "^1.1.0",
+    "@nomicfoundation/hardhat-toolbox": "^6.1.0",
+    "@nomicfoundation/hardhat-verify": "^2.1.1",
+    "@typechain/ethers-v6": "^0.5.1",
+    "@typechain/hardhat": "^9.1.0",
+    "chai": "^4.5.0",
+    "dotenv": "^17.2.3",
+    "hardhat": "^2.26.3",
+    "hardhat-gas-reporter": "^2.3.0",
+    "solidity-coverage": "^0.8.16",
+    "typechain": "^8.3.2"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.4.0",
+    "axios": "^1.12.2",
+    "ethers": "^6.15.0",
+    "merkletreejs": "^0.6.0"
+  }
+}
