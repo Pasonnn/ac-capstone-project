@@ -42,7 +42,7 @@ contract AirdropFactory is Ownable {
      * @dev Constructor that sets the implementation address
      * @param implementation_ Address of the MerkleAirdrop implementation contract
      */
-    constructor(address implementation_) Ownable(msg.sender) {
+    constructor(address implementation_) Ownable() {
         require(implementation_ != address(0), "AirdropFactory: implementation cannot be zero address");
         implementation = implementation_;
     }
