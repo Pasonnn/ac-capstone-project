@@ -1,11 +1,11 @@
 {
   "network": "sepolia",
-  "timestamp": 1761209989,
+  "timestamp": 1761229969,
   "deployer": "0x09e23052d4a07D38C85C35Af34c9e1d0555243EE",
-  "token": "0xB08193dEFBBB17D5248AA92298d263a71Ae4479A",
-  "implementation": "0x1E39F2c28DEF9290aB745332E89216caDe458Ad7",
-  "factory": "0x43EdE8a62863eC3455e0309Ea46296A7494c489C",
-  "deploymentBlock": 9471918,
+  "token": "0x92d705f6DB18ea7262f69985Ce8E98bCb58fc3BB",
+  "implementation": "0x2e2a4e1a3159Dd087655c82BF11381054297E45d",
+  "factory": "0x83c3860EcD9981f582434Ed67036db90D5375032",
+  "deploymentBlock": 9473567,
   "gasUsed": "TBD",
-  "etherscanUrl": "https://sepolia.etherscan.io/address/0x43EdE8a62863eC3455e0309Ea46296A7494c489C"
+  "etherscanUrl": "https://sepolia.etherscan.io/address/0x83c3860EcD9981f582434Ed67036db90D5375032"
 }

@@ -1,7 +1,14 @@
-import { useState, useEffect } from "react";
-import { useAccount } from "wagmi";
+import { useState, useEffect, useCallback } from "react";
+import { usePublicClient } from "wagmi";
 import { useReadContract } from "wagmi";
-import { formatEther } from "viem";
+import { formatEther, decodeEventLog, Address } from "viem";
+import FACTORY_ABI from "@/artifacts/contracts/AirdropFactory.sol/AirdropFactory.json";
+
+const AIRDROP_FACTORY_ADDRESS = process.env
+  .NEXT_PUBLIC_AIRDROP_FACTORY_ADDRESS as Address;
+const IPFS_GATEWAY_URL =
+  process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL || "https://ipfs.de-id.xyz/ipfs";
+const DEPLOYMENT_BLOCK = 9473567n; // Known deployment block from sepolia_deployment.json
 
 interface AirdropMetadata {
   name: string;
@@ -43,81 +50,160 @@ interface AirdropEvent {
   tokenSymbol?: string;
 }
 
-// Mock airdrop events - in a real app, you'd fetch these from an indexer or subgraph
-const MOCK_AIRDROP_EVENTS: AirdropEvent[] = [
-  {
-    creator: "0x09e23052d4a07D38C85C35Af34c9e1d0555243EE",
-    token: "0x6f98Ef7D194718164eFcf625b27cd3b02C3881db",
-    airdropAddress: "0x75677a6e847DCAA66B85814058F9cF437b784b4A",
-    merkleRoot:
-      "0xf5169277c2daa30761c2b257066ee1085ed80354624268b1d59f661fe7af49be",
-    metadataURI: "ipfs://QmWJYh5QzSjm3JEA6ghzKXt8cPz8rK4WNM9vA7qn9rehp6",
-    timestamp: 1761233628,
-    totalAmount: "600000000000000000000",
-    transactionHash:
-      "0xb5f50c507194ecc75b30f54c3142463f522884963d3f796cab46d3dab412154b",
-    blockNumber: 9473860,
-  },
-];
-
 export function useAirdropData() {
+  const publicClient = usePublicClient();
   const [airdrops, setAirdrops] = useState<AirdropEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchAirdrops = async () => {
+  const fetchAirdropEvents = useCallback(async () => {
+    if (!publicClient || !AIRDROP_FACTORY_ADDRESS) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      console.log("Fetching airdrop events from blockchain...");
+
+      // Get current block number to limit the range
+      const currentBlock = await publicClient.getBlockNumber();
+      let fromBlock = Math.max(
+        Number(DEPLOYMENT_BLOCK),
+        Number(currentBlock) - 5000
+      ); // Use deployment block or last 5,000 blocks
+
+      console.log(`Fetching logs from block ${fromBlock} to ${currentBlock}`);
+
+      let logs;
       try {
-        setLoading(true);
-        setError(null);
-
-        // Start with mock data
-        let airdropEvents = [...MOCK_AIRDROP_EVENTS];
-
-        // Fetch IPFS data for each airdrop
-        const airdropsWithData = await Promise.all(
-          airdropEvents.map(async (airdrop) => {
-            try {
-              // Extract IPFS hash from URI
-              const ipfsHash = airdrop.metadataURI.replace("ipfs://", "");
-              const ipfsUrl = `https://ipfs.de-id.xyz/ipfs/${ipfsHash}`;
-
-              console.log(`Fetching airdrop data from: ${ipfsUrl}`);
-
-              const response = await fetch(ipfsUrl);
-              if (!response.ok) {
-                throw new Error(
-                  `Failed to fetch IPFS data: ${response.status}`
-                );
-              }
-
-              const airdropData: AirdropData = await response.json();
-
-              return {
-                ...airdrop,
-                airdropData,
-              };
-            } catch (error) {
-              console.error(
-                `Error fetching airdrop data for ${airdrop.airdropAddress}:`,
-                error
-              );
-              return airdrop;
-            }
-          })
+        // Try to fetch logs with the initial range
+        logs = await publicClient.getLogs({
+          address: AIRDROP_FACTORY_ADDRESS,
+          event: {
+            abi: FACTORY_ABI.abi,
+            name: "AirdropCreated",
+            type: "event",
+            inputs: [
+              { indexed: true, name: "creator", type: "address" },
+              { indexed: true, name: "token", type: "address" },
+              { indexed: true, name: "airdropAddress", type: "address" },
+              { indexed: false, name: "merkleRoot", type: "bytes32" },
+              { indexed: false, name: "metadataURI", type: "string" },
+              { indexed: false, name: "timestamp", type: "uint256" },
+              { indexed: false, name: "totalAmount", type: "uint256" },
+            ],
+          },
+          fromBlock: BigInt(fromBlock),
+          toBlock: currentBlock,
+        });
+      } catch (error) {
+        console.warn("Initial fetch failed, trying with smaller range:", error);
+        // If that fails, try with an even smaller range, but not before deployment
+        fromBlock = Math.max(
+          Number(DEPLOYMENT_BLOCK),
+          Number(currentBlock) - 1000
+        );
+        console.log(
+          `Retrying with smaller range: ${fromBlock} to ${currentBlock}`
         );
 
-        setAirdrops(airdropsWithData);
-      } catch (error) {
-        console.error("Error fetching airdrops:", error);
-        setError("Failed to fetch airdrops");
-      } finally {
-        setLoading(false);
+        logs = await publicClient.getLogs({
+          address: AIRDROP_FACTORY_ADDRESS,
+          event: {
+            abi: FACTORY_ABI.abi,
+            name: "AirdropCreated",
+            type: "event",
+            inputs: [
+              { indexed: true, name: "creator", type: "address" },
+              { indexed: true, name: "token", type: "address" },
+              { indexed: true, name: "airdropAddress", type: "address" },
+              { indexed: false, name: "merkleRoot", type: "bytes32" },
+              { indexed: false, name: "metadataURI", type: "string" },
+              { indexed: false, name: "timestamp", type: "uint256" },
+              { indexed: false, name: "totalAmount", type: "uint256" },
+            ],
+          },
+          fromBlock: BigInt(fromBlock),
+          toBlock: currentBlock,
+        });
       }
-    };
 
-    fetchAirdrops();
-  }, []);
+      console.log(`Found ${logs.length} airdrop events`);
+
+      const fetchedAirdrops: AirdropEvent[] = [];
+
+      for (const log of logs) {
+        try {
+          const decoded = decodeEventLog({
+            abi: FACTORY_ABI.abi,
+            data: log.data,
+            topics: log.topics,
+          });
+
+          if (decoded.eventName === "AirdropCreated") {
+            const args = decoded.args as unknown as Record<string, unknown>;
+            const metadataURI = args.metadataURI as string;
+            let airdropData: AirdropData | undefined;
+
+            // Fetch IPFS data if available
+            if (metadataURI.startsWith("ipfs://")) {
+              const cid = metadataURI.replace("ipfs://", "");
+              const ipfsHttpUrl = `${IPFS_GATEWAY_URL}/${cid}`;
+
+              try {
+                console.log(`Fetching IPFS data from: ${ipfsHttpUrl}`);
+                const response = await fetch(ipfsHttpUrl);
+                if (response.ok) {
+                  airdropData = await response.json();
+                } else {
+                  console.warn(
+                    `Failed to fetch IPFS data for ${metadataURI}: ${response.statusText}`
+                  );
+                }
+              } catch (ipfsError) {
+                console.error(
+                  `Error fetching IPFS data for ${metadataURI}:`,
+                  ipfsError
+                );
+              }
+            }
+
+            fetchedAirdrops.push({
+              creator: args.creator as Address,
+              token: args.token as Address,
+              airdropAddress: args.airdropAddress as Address,
+              merkleRoot: args.merkleRoot as string,
+              metadataURI: metadataURI,
+              timestamp: Number(args.timestamp),
+              totalAmount: (args.totalAmount as bigint).toString(),
+              transactionHash: log.transactionHash as Address,
+              blockNumber: Number(log.blockNumber),
+              airdropData: airdropData,
+            });
+          }
+        } catch (decodeError) {
+          console.error("Error decoding log:", decodeError);
+        }
+      }
+
+      // Sort by block number (newest first)
+      fetchedAirdrops.sort((a, b) => b.blockNumber - a.blockNumber);
+
+      console.log(`Successfully fetched ${fetchedAirdrops.length} airdrops`);
+      setAirdrops(fetchedAirdrops);
+    } catch (err) {
+      console.error("Error fetching airdrop events:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to fetch airdrop events"
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [publicClient]);
+
+  useEffect(() => {
+    fetchAirdropEvents();
+  }, [fetchAirdropEvents]);
 
   return {
     airdrops,
@@ -169,7 +255,7 @@ export function useUserClaim(
 
   useEffect(() => {
     if (!userAddress || !airdropData) {
-      setUserClaim(null);
+      setTimeout(() => setUserClaim(null), 0);
       return;
     }
 
@@ -178,7 +264,7 @@ export function useUserClaim(
       (claim) => claim.account.toLowerCase() === userAddress.toLowerCase()
     );
 
-    setUserClaim(claim || null);
+    setTimeout(() => setUserClaim(claim || null), 0);
   }, [userAddress, airdropData]);
 
   return userClaim;
