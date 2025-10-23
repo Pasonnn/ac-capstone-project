@@ -1,4 +1,4 @@
-# 🌐 Decode Airdrop Builder
+# 🌐 Airdrop Builder
 ### A Fully Decentralized, Self-Service Merkle Airdrop Platform
 *(Next.js + Solidity + IPFS)*
 
@@ -6,7 +6,7 @@
 
 ## 🧠 Overview
 
-**Decode Airdrop Builder** is a decentralized web application that allows anyone to create and manage airdrops without a centralized backend.
+**Airdrop Builder** is a decentralized web application that allows anyone to create and manage airdrops without a centralized backend.
 
 Creators can:
 1. Upload a CSV of wallet addresses and token amounts.
