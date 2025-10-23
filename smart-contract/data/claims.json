@@ -1,0 +1,54 @@
+{
+  "merkleRoot": "0xb09db443423ddaa0b5e40d4c1f322255c606e0a42eaf175defc81a22b48d9a2b",
+  "totalAmount": "675000000000000000000",
+  "claims": {
+    "0x1111111111111111111111111111111111111111": {
+      "index": 0,
+      "address": "0x1111111111111111111111111111111111111111",
+      "amount": "200000000000000000000",
+      "proof": [
+        "0xc9dd5c722cfbda6c19fef6a9f9331db6a8b9791d9c7abd3893e2814178bad58e",
+        "0x0a7e4a0d2077076383dd3c0c2ec5e5e40448fabdaee8dfc1cb0765c168fb033f",
+        "0x5e16d08d1ffb01ee129dbcf7c654c0380ddc0b979f3222b50f574b87daaab5c2"
+      ]
+    },
+    "0x1234567890123456789012345678901234567890": {
+      "index": 1,
+      "address": "0x1234567890123456789012345678901234567890",
+      "amount": "100000000000000000000",
+      "proof": [
+        "0xad248fc7722a4b18fe1723c70d0067d38443899e059843adf1c6ea76ad965cde",
+        "0x0a7e4a0d2077076383dd3c0c2ec5e5e40448fabdaee8dfc1cb0765c168fb033f",
+        "0x5e16d08d1ffb01ee129dbcf7c654c0380ddc0b979f3222b50f574b87daaab5c2"
+      ]
+    },
+    "0x9876543210987654321098765432109876543210": {
+      "index": 2,
+      "address": "0x9876543210987654321098765432109876543210",
+      "amount": "50000000000000000000",
+      "proof": [
+        "0xb28fe63dc545290965a1383cddd8062310182e61e0176576e67632db1485ad52",
+        "0xb3aa339e32ee8bd7a17eab150e94b28f130749a156f4c4cf42b21e6e2d1ac9d1",
+        "0x5e16d08d1ffb01ee129dbcf7c654c0380ddc0b979f3222b50f574b87daaab5c2"
+      ]
+    },
+    "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd": {
+      "index": 3,
+      "address": "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
+      "amount": "250000000000000000000",
+      "proof": [
+        "0xce74f033e44d0f6f4f0789149f6182459e4debefdac70e142b500d5033a39a15",
+        "0xb3aa339e32ee8bd7a17eab150e94b28f130749a156f4c4cf42b21e6e2d1ac9d1",
+        "0x5e16d08d1ffb01ee129dbcf7c654c0380ddc0b979f3222b50f574b87daaab5c2"
+      ]
+    },
+    "0xfedcba9876543210fedcba9876543210fedcba98": {
+      "index": 4,
+      "address": "0xfedcba9876543210fedcba9876543210fedcba98",
+      "amount": "75000000000000000000",
+      "proof": [
+        "0x2a3e364f7746bb03982a7f8ee0bd72ea41294336eff3fb347b68e9eef9c5f636"
+      ]
+    }
+  }
+}

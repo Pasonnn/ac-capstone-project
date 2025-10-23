@@ -1,0 +1,29 @@
+{
+  "name": "smart-contract",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "generate-csv": "hardhat run scripts/generate-sample-csv.ts",
+    "build-merkle": "hardhat run scripts/csv-to-merkle.ts",
+    "deploy:factory": "hardhat run scripts/deploy-factory.ts --network sepolia",
+    "create:airdrop": "hardhat run scripts/create-airdrop.ts"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-ignition": "^3.0.3",
+    "@nomicfoundation/hardhat-toolbox-viem": "^5.0.0",
+    "@types/node": "^22.18.12",
+    "forge-std": "github:foundry-rs/forge-std#v1.9.4",
+    "hardhat": "^3.0.8",
+    "typescript": "~5.8.0",
+    "viem": "^2.38.3",
+    "merkletreejs": "^0.4.0",
+    "csv-parser": "^3.0.0",
+    "chai": "^4.3.7",
+    "@types/chai": "^4.3.0"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.4.0"
+  }
+}
