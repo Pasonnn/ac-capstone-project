@@ -60,8 +60,7 @@ function AirdropCard({ airdrop, index, onViewDetails }: AirdropCardProps) {
           </div>
           <div>
             <h3 className="font-semibold text-gray-900">
-              {airdrop.airdropData?.metadata.name ||
-                `Airdrop #${index + 1}`}
+              {airdrop.airdropData?.metadata.name || `Airdrop #${index + 1}`}
             </h3>
             <p className="text-sm text-gray-500">
               by {formatAddress(airdrop.creator)}
@@ -95,9 +94,7 @@ function AirdropCard({ airdrop, index, onViewDetails }: AirdropCardProps) {
 
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <Users className="w-4 h-4" />
-          <span>
-            {airdrop.airdropData?.claims.length || 0} recipients
-          </span>
+          <span>{airdrop.airdropData?.claims.length || 0} recipients</span>
         </div>
 
         <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -115,8 +112,7 @@ function AirdropCard({ airdrop, index, onViewDetails }: AirdropCardProps) {
           <div className="flex items-center gap-2 text-sm text-green-600">
             <CheckCircle className="w-4 h-4" />
             <span>
-              You're eligible for {formatAmount(userClaim.amount)}{" "}
-              tokens
+              You're eligible for {formatAmount(userClaim.amount)} tokens
             </span>
           </div>
         )}
@@ -132,10 +128,7 @@ function AirdropCard({ airdrop, index, onViewDetails }: AirdropCardProps) {
           View Details
         </Button>
         {!isExpired && (
-          <Link
-            href={`/claim/${airdrop.airdropAddress}`}
-            className="flex-1"
-          >
+          <Link href={`/claim/${airdrop.airdropAddress}`} className="flex-1">
             <Button className="w-full">Claim Tokens</Button>
           </Link>
         )}
@@ -168,7 +161,6 @@ export default function AirdropsPage() {
       airdrop.airdropAddress.toLowerCase().includes(searchLower)
     );
   });
-
 
   if (loading) {
     return (

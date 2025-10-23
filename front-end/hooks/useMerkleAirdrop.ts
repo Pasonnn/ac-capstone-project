@@ -97,7 +97,12 @@ export function useClaimTokens(airdropAddress: string | null) {
         address: airdropAddress as `0x${string}`,
         abi: MERKLE_AIRDROP_ABI,
         functionName: "claim",
-        args: [BigInt(index), account as `0x${string}`, BigInt(amount), proof],
+        args: [
+          BigInt(index),
+          account as `0x${string}`,
+          BigInt(amount),
+          proof as `0x${string}`[],
+        ],
       });
     } catch (err) {
       console.error("Error claiming tokens:", err);
