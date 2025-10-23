@@ -4,7 +4,7 @@ import {
   useWaitForTransactionReceipt,
   useAccount,
 } from "wagmi";
-import { parseEther, decodeEventLog, type Address } from "viem";
+import { parseEther, parseUnits, decodeEventLog, type Address } from "viem";
 import { useState, useEffect } from "react";
 
 import FACTORY_ABI from "@/artifacts/contracts/AirdropFactory.sol/AirdropFactory.json";
@@ -41,7 +41,8 @@ export function useCreateAirdrop() {
     tokenAddress: Address,
     merkleRoot: string,
     metadataURI: string,
-    totalAmount: string // Keep as string for easier handling
+    totalAmount: string, // Keep as string for easier handling
+    decimals: number = 18
   ) => {
     try {
       setIsWaitingForConfirmation(true);
@@ -54,8 +55,8 @@ export function useCreateAirdrop() {
 
       console.log("Creating airdrop with gas limit:", gasLimit.toString());
 
-      // Convert totalAmount to BigInt
-      const totalAmountBigInt = parseEther(totalAmount);
+      // Convert totalAmount to BigInt using correct decimals
+      const totalAmountBigInt = parseUnits(totalAmount, decimals);
 
       // Step 1: Approve the factory to spend tokens (like in deployAndTest.ts line 124)
       console.log("Step 1: Approving factory to spend tokens...");
@@ -82,12 +83,13 @@ export function useCreateAirdrop() {
     tokenAddress: Address,
     merkleRoot: string,
     metadataURI: string,
-    totalAmount: string
+    totalAmount: string,
+    decimals: number = 18
   ) => {
     try {
       setCurrentStep("create");
       const gasLimit = getGasEstimate();
-      const totalAmountBigInt = parseEther(totalAmount);
+      const totalAmountBigInt = parseUnits(totalAmount, decimals);
 
       console.log("Step 2: Creating airdrop...");
       await writeContract({
@@ -205,23 +207,44 @@ export function useAirdropFactoryInfo() {
 export function useTokenInfo(tokenAddress: Address | undefined) {
   const { address: userAddress } = useAccount();
 
-  const { data: name } = useReadContract({
+  const {
+    data: name,
+    isLoading: nameLoading,
+    error: nameError,
+  } = useReadContract({
     address: tokenAddress,
     abi: ERC20_ABI.abi,
     functionName: "name",
-  });
+    query: {
+      enabled: !!tokenAddress && tokenAddress.length === 42,
+    },
+  }) as { data: string | undefined; isLoading: boolean; error: Error | null };
 
-  const { data: symbol } = useReadContract({
+  const {
+    data: symbol,
+    isLoading: symbolLoading,
+    error: symbolError,
+  } = useReadContract({
     address: tokenAddress,
     abi: ERC20_ABI.abi,
     functionName: "symbol",
-  });
+    query: {
+      enabled: !!tokenAddress && tokenAddress.length === 42,
+    },
+  }) as { data: string | undefined; isLoading: boolean; error: Error | null };
 
-  const { data: decimals } = useReadContract({
+  const {
+    data: decimals,
+    isLoading: decimalsLoading,
+    error: decimalsError,
+  } = useReadContract({
     address: tokenAddress,
     abi: ERC20_ABI.abi,
     functionName: "decimals",
-  });
+    query: {
+      enabled: !!tokenAddress && tokenAddress.length === 42,
+    },
+  }) as { data: number | undefined; isLoading: boolean; error: Error | null };
 
   const { data: balance } = useReadContract({
     address: tokenAddress,
@@ -230,10 +253,15 @@ export function useTokenInfo(tokenAddress: Address | undefined) {
     args: userAddress ? [userAddress] : undefined,
   });
 
+  const isLoading = nameLoading || symbolLoading || decimalsLoading;
+  const hasError = nameError || symbolError || decimalsError;
+
   return {
     name,
     symbol,
     decimals,
     balance,
+    isLoading,
+    hasError,
   };
 }

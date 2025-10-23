@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import {
   useCreateAirdrop,
   useAirdropGasEstimate,
+  useTokenInfo,
 } from "@/hooks/useAirdropFactory";
 import { useMerkleAirdrop } from "@/hooks/useMerkleAirdrop";
 import { createClaimsData, AirdropData } from "@/lib/merkle";
-import { parseEther, formatEther } from "viem";
+import { formatEther, parseUnits, formatUnits } from "viem";
 import Papa from "papaparse";
 import {
   Upload,
@@ -45,6 +46,15 @@ export default function CreateAirdrop() {
   const [merkleRoot, setMerkleRoot] = useState("");
   const [isUploading, setIsUploading] = useState(false);
 
+  // Get token decimals for proper amount parsing
+  const {
+    decimals: tokenDecimals,
+    name: tokenName,
+    symbol: tokenSymbol,
+    isLoading: tokenLoading,
+    hasError: tokenError,
+  } = useTokenInfo(tokenAddress as `0x${string}`);
+
   // Gas estimation for the transaction
   const { gasEstimate: estimatedGas, isLoading: isEstimatingGas } =
     useAirdropGasEstimate(
@@ -77,7 +87,7 @@ export default function CreateAirdrop() {
           .map((row, index) => ({
             index,
             account: row.address,
-            amount: parseEther(row.amount.toString()).toString(),
+            amount: row.amount.toString(), // Store raw amount as string
           }));
 
         setCsvData(airdropData);
@@ -96,23 +106,53 @@ export default function CreateAirdrop() {
       return;
     }
 
+    if (tokenLoading) {
+      alert("Please wait for token information to load");
+      return;
+    }
+
+    if (tokenError) {
+      alert("Error loading token information. Please check the token address.");
+      return;
+    }
+
+    if (tokenDecimals === undefined) {
+      alert(
+        "Token decimals not found. Please check if the token address is correct."
+      );
+      return;
+    }
+
     try {
       setIsUploading(true);
 
-      // Create claims data
+      // Parse CSV amounts with correct decimals
+      const parsedCsvData = csvData.map((data) => ({
+        ...data,
+        amount: parseUnits(
+          data.amount,
+          typeof tokenDecimals === "number" ? tokenDecimals : 18
+        ).toString(),
+      }));
+
+      // Create claims data with parsed amounts
       const claimsData = createClaimsData(
-        csvData,
+        parsedCsvData,
         tokenAddress,
         airdropName || "Airdrop Campaign",
         airdropDescription || "A decentralized airdrop campaign"
       );
 
       // Calculate total amount
-      const total = csvData.reduce(
+      const total = parsedCsvData.reduce(
         (sum, data) => sum + BigInt(data.amount),
         BigInt(0)
       );
-      setTotalAmount(formatEther(total));
+      const formattedTotal = formatUnits(
+        total,
+        typeof tokenDecimals === "number" ? tokenDecimals : 18
+      );
+      setTotalAmount(formattedTotal);
 
       // Upload to IPFS
       const response = await fetch("/api/ipfs-upload", {
@@ -152,7 +192,8 @@ export default function CreateAirdrop() {
           tokenAddress as `0x${string}`,
           merkleRoot,
           ipfsUrl,
-          totalAmount
+          totalAmount,
+          typeof tokenDecimals === "number" ? tokenDecimals : 18
         );
       } else if (currentStep === "approve" && receipt) {
         // Step 2: Create airdrop after approval is confirmed
@@ -160,7 +201,8 @@ export default function CreateAirdrop() {
           tokenAddress as `0x${string}`,
           merkleRoot,
           ipfsUrl,
-          totalAmount
+          totalAmount,
+          typeof tokenDecimals === "number" ? tokenDecimals : 18
         );
       }
     } catch (error) {
@@ -299,6 +341,37 @@ export default function CreateAirdrop() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="0x..."
                   />
+                  {tokenAddress && (
+                    <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      {tokenLoading ? (
+                        <div className="text-sm text-blue-600">
+                          <p>Loading token information...</p>
+                        </div>
+                      ) : tokenError ? (
+                        <div className="text-sm text-red-600">
+                          <p>Error loading token. Please check the address.</p>
+                        </div>
+                      ) : tokenDecimals !== undefined ? (
+                        <div className="text-sm text-blue-800">
+                          <p>
+                            <strong>Token:</strong>{" "}
+                            {String(tokenName || "Unknown")} (
+                            {String(tokenSymbol || "???")})
+                          </p>
+                          <p>
+                            <strong>Decimals:</strong> {String(tokenDecimals)}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="text-sm text-yellow-600">
+                          <p>
+                            Token information not found. Please check the
+                            address.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 

@@ -6,7 +6,6 @@ import { Navigation } from "@/components/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Gift,
-  ExternalLink,
   Clock,
   Users,
   Coins,
@@ -19,7 +18,6 @@ import {
 import Link from "next/link";
 import {
   useAirdropData,
-  useTokenInfo,
   useUserClaim,
   formatAddress,
   formatTimestamp,
@@ -27,8 +25,9 @@ import {
   isClaimDeadlinePassed,
   getDaysUntilDeadline,
 } from "@/hooks/useAirdropData";
+import { useTokenInfo } from "@/hooks/useAirdropFactory";
 import { useClaimTokens, useIsClaimed } from "@/hooks/useMerkleAirdrop";
-import { formatEther } from "viem";
+import { formatUnits } from "viem";
 
 interface ClaimData {
   index: number;
@@ -37,15 +36,26 @@ interface ClaimData {
   proof: string[];
 }
 
+// Helper function to format amounts with correct decimals
+const formatAmountWithDecimals = (amount: string, decimals?: number) => {
+  if (decimals !== undefined) {
+    return formatUnits(BigInt(amount), decimals);
+  }
+  return formatAmount(amount); // Fallback to default formatting
+};
+
 interface AirdropCardProps {
   airdrop: any; // eslint-disable-line @typescript-eslint/no-explicit-any
   index: number;
   onViewDetails: (airdrop: any) => void; // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
-function AirdropCard({ airdrop, index, onViewDetails }: AirdropCardProps) {
+function AirdropCard({ airdrop, index }: AirdropCardProps) {
   const { address } = useAccount();
-  const { symbol } = useTokenInfo(airdrop.token);
+  const { symbol, decimals } = useTokenInfo(airdrop.token) as {
+    symbol: string | undefined;
+    decimals: number | undefined;
+  };
   const userClaim = useUserClaim(address, airdrop.airdropData);
   const isExpired = isClaimDeadlinePassed(
     airdrop.airdropData?.metadata.claimDeadline || 0
@@ -157,7 +167,8 @@ function AirdropCard({ airdrop, index, onViewDetails }: AirdropCardProps) {
         >
           <Coins className="w-4 h-4" />
           <span>
-            {formatAmount(airdrop.totalAmount)} {symbol || "tokens"}
+            {formatAmountWithDecimals(airdrop.totalAmount, decimals)}{" "}
+            {symbol || "tokens"}
           </span>
         </div>
 
@@ -189,15 +200,9 @@ function AirdropCard({ airdrop, index, onViewDetails }: AirdropCardProps) {
           <div className="flex items-center gap-2 text-sm text-green-600">
             <CheckCircle className="w-4 h-4" />
             <span>
-              You&apos;re eligible for {formatAmount(userClaim.amount)} tokens
+              You&apos;re eligible for{" "}
+              {formatAmountWithDecimals(userClaim.amount, decimals)} tokens
             </span>
-          </div>
-        )}
-
-        {isClaimed && (
-          <div className="flex items-center gap-2 text-sm text-blue-600">
-            <CheckCircle className="w-4 h-4" />
-            <span>Already claimed!</span>
           </div>
         )}
       </div>
@@ -215,7 +220,7 @@ function AirdropCard({ airdrop, index, onViewDetails }: AirdropCardProps) {
                 Claiming...
               </>
             ) : (
-              `Claim ${formatEther(BigInt(userClaim.amount))}`
+              `Claim ${formatAmountWithDecimals(userClaim.amount, decimals)}`
             )}
           </Button>
         )}
@@ -249,11 +254,17 @@ export default function AirdropsPage() {
   const [showOnlyEligible, setShowOnlyEligible] = useState(false);
   const [selectedAirdrop, setSelectedAirdrop] = useState<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
 
+  // Get token info for the selected airdrop
+  const { decimals: selectedTokenDecimals } = useTokenInfo(
+    selectedAirdrop?.token
+  ) as { decimals: number | undefined };
+
   // Filter airdrops based on search term and eligibility
   const filteredAirdrops = airdrops.filter((airdrop) => {
     // Check if user is eligible for this airdrop
     const userClaim = airdrop.airdropData?.claims?.find(
-      (claim: any) => claim.account.toLowerCase() === address?.toLowerCase()
+      (claim: ClaimData) =>
+        claim.account.toLowerCase() === address?.toLowerCase()
     );
     const isEligible = !!userClaim;
 
@@ -440,7 +451,11 @@ export default function AirdropsPage() {
                       <div>
                         <span className="font-medium">Total Amount:</span>
                         <p className="text-gray-600">
-                          {formatAmount(selectedAirdrop.totalAmount)} tokens
+                          {formatAmountWithDecimals(
+                            selectedAirdrop.totalAmount,
+                            selectedTokenDecimals
+                          )}{" "}
+                          tokens
                         </p>
                       </div>
                       <div>
@@ -481,7 +496,10 @@ export default function AirdropsPage() {
                             </div>
                             <div className="text-right">
                               <p className="font-medium">
-                                {formatAmount(claim.amount)}
+                                {formatAmountWithDecimals(
+                                  claim.amount,
+                                  selectedTokenDecimals
+                                )}
                               </p>
                               {address &&
                                 claim.account.toLowerCase() ===
