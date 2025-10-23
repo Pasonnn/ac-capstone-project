@@ -3,7 +3,7 @@ import { sepolia, hardhat } from "wagmi/chains";
 
 // Contract addresses (update these after deployment)
 export const AIRDROP_FACTORY_ADDRESS =
-  "0x0000000000000000000000000000000000000000"; // Update after deployment
+  "0x83c3860EcD9981f582434Ed67036db90D5375032"; // Sepolia deployment
 export const MOCK_ERC20_ADDRESS = "0x0000000000000000000000000000000000000000"; // Update after deployment
 
 // Web3.Storage API key (set in environment variables)

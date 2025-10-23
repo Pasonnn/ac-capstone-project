@@ -1,61 +1,62 @@
-import { useWriteContract, useReadContract, useAccount } from "wagmi";
+import {
+  useReadContract,
+  useWriteContract,
+  useWaitForTransactionReceipt,
+} from "wagmi";
 import { MERKLE_AIRDROP_ABI } from "@/lib/contracts";
-import { parseEther } from "viem";
+import { useState, useEffect } from "react";
 
-export function useMerkleAirdrop(contractAddress: string) {
-  const { address } = useAccount();
-
-  // Read contract data
+export function useMerkleAirdrop(airdropAddress: string | null) {
   const { data: token } = useReadContract({
-    address: contractAddress as `0x${string}`,
+    address: airdropAddress as `0x${string}`,
     abi: MERKLE_AIRDROP_ABI,
     functionName: "token",
   });
 
   const { data: merkleRoot } = useReadContract({
-    address: contractAddress as `0x${string}`,
+    address: airdropAddress as `0x${string}`,
     abi: MERKLE_AIRDROP_ABI,
     functionName: "merkleRoot",
   });
 
-  const { data: metadataURI } = useReadContract({
-    address: contractAddress as `0x${string}`,
-    abi: MERKLE_AIRDROP_ABI,
-    functionName: "metadataURI",
-  });
-
   const { data: totalAmount } = useReadContract({
-    address: contractAddress as `0x${string}`,
+    address: airdropAddress as `0x${string}`,
     abi: MERKLE_AIRDROP_ABI,
     functionName: "totalAmount",
   });
 
+  const { data: balance } = useReadContract({
+    address: airdropAddress as `0x${string}`,
+    abi: MERKLE_AIRDROP_ABI,
+    functionName: "getBalance",
+  });
+
   const { data: claimDeadline } = useReadContract({
-    address: contractAddress as `0x${string}`,
+    address: airdropAddress as `0x${string}`,
     abi: MERKLE_AIRDROP_ABI,
     functionName: "claimDeadline",
   });
 
   const { data: unlockTimestamp } = useReadContract({
-    address: contractAddress as `0x${string}`,
+    address: airdropAddress as `0x${string}`,
     abi: MERKLE_AIRDROP_ABI,
     functionName: "unlockTimestamp",
   });
 
-  const { data: balance } = useReadContract({
-    address: contractAddress as `0x${string}`,
+  const { data: metadataURI } = useReadContract({
+    address: airdropAddress as `0x${string}`,
     abi: MERKLE_AIRDROP_ABI,
-    functionName: "getBalance",
+    functionName: "metadataURI",
   });
 
   const { data: daysUntilExpiry } = useReadContract({
-    address: contractAddress as `0x${string}`,
+    address: airdropAddress as `0x${string}`,
     abi: MERKLE_AIRDROP_ABI,
     functionName: "getDaysUntilExpiry",
   });
 
   const { data: daysUntilWithdrawal } = useReadContract({
-    address: contractAddress as `0x${string}`,
+    address: airdropAddress as `0x${string}`,
     abi: MERKLE_AIRDROP_ABI,
     functionName: "getDaysUntilWithdrawal",
   });
@@ -65,79 +66,73 @@ export function useMerkleAirdrop(contractAddress: string) {
     merkleRoot,
     metadataURI,
     totalAmount,
+    balance,
     claimDeadline,
     unlockTimestamp,
-    balance,
     daysUntilExpiry,
     daysUntilWithdrawal,
   };
 }
 
-export function useClaimTokens(contractAddress: string) {
+export function useClaimTokens(airdropAddress: string | null) {
   const { writeContract, data: hash, error, isPending } = useWriteContract();
+  const [isWaitingForConfirmation, setIsWaitingForConfirmation] =
+    useState(false);
+
+  const { data: receipt, isLoading: isConfirming } =
+    useWaitForTransactionReceipt({
+      hash,
+    });
 
   const claimTokens = async (
     index: number,
     account: string,
     amount: string,
-    merkleProof: string[]
+    proof: string[]
   ) => {
     try {
+      setIsWaitingForConfirmation(true);
+
       await writeContract({
-        address: contractAddress as `0x${string}`,
+        address: airdropAddress as `0x${string}`,
         abi: MERKLE_AIRDROP_ABI,
         functionName: "claim",
-        args: [
-          BigInt(index),
-          account as `0x${string}`,
-          parseEther(amount),
-          merkleProof as readonly `0x${string}`[],
-        ],
+        args: [BigInt(index), account as `0x${string}`, BigInt(amount), proof],
       });
     } catch (err) {
       console.error("Error claiming tokens:", err);
+      setIsWaitingForConfirmation(false);
       throw err;
     }
   };
+
+  useEffect(() => {
+    if (receipt) {
+      setTimeout(() => {
+        setIsWaitingForConfirmation(false);
+      }, 0);
+    }
+  }, [receipt]);
 
   return {
     claimTokens,
     hash,
     error,
-    isPending,
+    isPending: isPending || isWaitingForConfirmation,
+    isConfirming,
+    receipt,
   };
 }
 
-export function useWithdrawRemaining(contractAddress: string) {
-  const { writeContract, data: hash, error, isPending } = useWriteContract();
-
-  const withdrawRemaining = async () => {
-    try {
-      await writeContract({
-        address: contractAddress as `0x${string}`,
-        abi: MERKLE_AIRDROP_ABI,
-        functionName: "withdrawRemaining",
-      });
-    } catch (err) {
-      console.error("Error withdrawing remaining tokens:", err);
-      throw err;
-    }
-  };
-
-  return {
-    withdrawRemaining,
-    hash,
-    error,
-    isPending,
-  };
-}
-
-export function useIsClaimed(contractAddress: string, index: number) {
+export function useIsClaimed(
+  airdropAddress: string | null,
+  index: number | null
+) {
   const { data: isClaimed } = useReadContract({
-    address: contractAddress as `0x${string}`,
+    address: airdropAddress as `0x${string}`,
     abi: MERKLE_AIRDROP_ABI,
     functionName: "isClaimed",
-    args: [BigInt(index)],
+    args: index !== null ? [BigInt(index)] : undefined,
   });
 
   return isClaimed;

@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
 import { Navigation } from "@/components/navigation";
 import { Button } from "@/components/ui/button";
-import { useCreateAirdrop } from "@/hooks/useAirdropFactory";
+import {
+  useCreateAirdrop,
+  useAirdropGasEstimate,
+} from "@/hooks/useAirdropFactory";
+import { useMerkleAirdrop } from "@/hooks/useMerkleAirdrop";
 import { createClaimsData, AirdropData } from "@/lib/merkle";
 import { parseEther, formatEther } from "viem";
 import Papa from "papaparse";
@@ -17,8 +21,19 @@ import {
 } from "lucide-react";
 
 export default function CreateAirdrop() {
-  const { address, isConnected } = useAccount();
-  const { createAirdrop, hash, error, isPending } = useCreateAirdrop();
+  const { isConnected } = useAccount();
+  const {
+    createAirdrop,
+    createAirdropAfterApproval,
+    hash,
+    error,
+    isPending,
+    isConfirming,
+    airdropAddress,
+    gasEstimate,
+    currentStep,
+    receipt,
+  } = useCreateAirdrop();
 
   const [step, setStep] = useState(1);
   const [csvData, setCsvData] = useState<AirdropData[]>([]);
@@ -30,6 +45,25 @@ export default function CreateAirdrop() {
   const [merkleRoot, setMerkleRoot] = useState("");
   const [isUploading, setIsUploading] = useState(false);
 
+  // Gas estimation for the transaction
+  const { gasEstimate: estimatedGas, isLoading: isEstimatingGas } =
+    useAirdropGasEstimate(
+      tokenAddress as `0x${string}`,
+      merkleRoot,
+      ipfsUrl,
+      totalAmount
+    );
+
+  // Verify airdrop deployment
+  const {
+    token,
+    merkleRoot: contractMerkleRoot,
+    totalAmount: contractTotalAmount,
+    balance,
+    claimDeadline,
+    unlockTimestamp,
+  } = useMerkleAirdrop(airdropAddress);
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -37,7 +71,7 @@ export default function CreateAirdrop() {
     Papa.parse(file, {
       header: true,
       complete: (results) => {
-        const data = results.data as any[];
+        const data = results.data as Array<{ address: string; amount: string }>;
         const airdropData: AirdropData[] = data
           .filter((row) => row.address && row.amount)
           .map((row, index) => ({
@@ -93,7 +127,7 @@ export default function CreateAirdrop() {
         throw new Error("Failed to upload to IPFS");
       }
 
-      const { url, cid } = await response.json();
+      const { url } = await response.json();
       setIpfsUrl(url);
       setMerkleRoot(claimsData.metadata.merkleRoot);
       setStep(3);
@@ -112,13 +146,35 @@ export default function CreateAirdrop() {
     }
 
     try {
-      await createAirdrop(tokenAddress, merkleRoot, ipfsUrl, totalAmount);
-      setStep(4);
+      if (currentStep === null) {
+        // Step 1: Approve tokens
+        await createAirdrop(
+          tokenAddress as `0x${string}`,
+          merkleRoot,
+          ipfsUrl,
+          totalAmount
+        );
+      } else if (currentStep === "approve" && receipt) {
+        // Step 2: Create airdrop after approval is confirmed
+        await createAirdropAfterApproval(
+          tokenAddress as `0x${string}`,
+          merkleRoot,
+          ipfsUrl,
+          totalAmount
+        );
+      }
     } catch (error) {
       console.error("Error deploying airdrop:", error);
       alert("Error deploying airdrop. Please try again.");
     }
   };
+
+  // Move to success step when airdrop address is available
+  useEffect(() => {
+    if (airdropAddress) {
+      setStep(4);
+    }
+  }, [airdropAddress]);
 
   if (!isConnected) {
     return (
@@ -301,32 +357,92 @@ export default function CreateAirdrop() {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm font-medium">IPFS URL:</span>
-                  <a
-                    href={ipfsUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-blue-600 hover:underline"
-                  >
-                    View on IPFS
-                  </a>
+                  <span className="text-sm font-medium">IPFS URI:</span>
+                  <div className="flex flex-col items-end">
+                    <a
+                      href={`https://ipfs.de-id.xyz/ipfs/${ipfsUrl.replace(
+                        "ipfs://",
+                        ""
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:underline mt-1"
+                    >
+                      {ipfsUrl}
+                    </a>
+                  </div>
                 </div>
+                {estimatedGas && (
+                  <div className="flex justify-between">
+                    <span className="text-sm font-medium">Estimated Gas:</span>
+                    <span className="text-sm">
+                      {estimatedGas.toString()} gas
+                      {isEstimatingGas && " (estimating...)"}
+                    </span>
+                  </div>
+                )}
               </div>
+
+              {/* Step Indicator */}
+              {currentStep && (
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    {currentStep === "approve" && (
+                      <>🔐 Step 1: Approve factory to spend your tokens</>
+                    )}
+                    {currentStep === "create" && (
+                      <>🚀 Step 2: Create and fund the airdrop</>
+                    )}
+                  </p>
+                </div>
+              )}
 
               <Button
                 onClick={handleDeployAirdrop}
-                disabled={isPending}
+                disabled={isPending || isConfirming}
                 className="w-full"
               >
                 {isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Deploying Airdrop...
+                    {currentStep === "approve"
+                      ? "Approving Tokens..."
+                      : "Creating Airdrop..."}
                   </>
+                ) : isConfirming ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Waiting for Confirmation...
+                  </>
+                ) : currentStep === "approve" ? (
+                  "Create Airdrop (After Approval)"
                 ) : (
                   "Deploy & Fund Airdrop"
                 )}
               </Button>
+
+              {hash && (
+                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm font-medium text-blue-800 mb-2">
+                    Transaction Hash:
+                  </p>
+                  <p className="text-sm font-mono text-blue-600 break-all">
+                    {hash}
+                  </p>
+                  {(gasEstimate || estimatedGas) && (
+                    <p className="text-sm text-blue-600 mt-2">
+                      ⛽ Gas Limit: {(gasEstimate || estimatedGas)?.toString()}{" "}
+                      gas
+                      {isEstimatingGas && " (estimating...)"}
+                    </p>
+                  )}
+                  {isConfirming && (
+                    <p className="text-sm text-blue-600 mt-2">
+                      ⏳ Waiting for transaction confirmation...
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -341,6 +457,96 @@ export default function CreateAirdrop() {
                 Your airdrop has been deployed and funded. Recipients can now
                 claim their tokens.
               </p>
+
+              {airdropAddress && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <p className="text-sm font-medium text-green-800 mb-2">
+                    Airdrop Contract Address:
+                  </p>
+                  <p className="text-sm font-mono text-green-600 break-all mb-3">
+                    {airdropAddress}
+                  </p>
+                  <div className="flex gap-2 justify-center">
+                    <a
+                      href={`https://sepolia.etherscan.io/address/${airdropAddress}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-600 hover:underline"
+                    >
+                      View on Etherscan
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {/* Airdrop Verification Details */}
+              {airdropAddress && (token || balance !== undefined) && (
+                <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                    Airdrop Verification
+                  </h3>
+
+                  {token && (
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Token:</span>
+                      <span className="text-sm font-mono">{token}</span>
+                    </div>
+                  )}
+
+                  {contractMerkleRoot && (
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Merkle Root:</span>
+                      <span className="text-sm font-mono text-xs">
+                        {contractMerkleRoot}
+                      </span>
+                    </div>
+                  )}
+
+                  {balance !== undefined && (
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">
+                        Contract Balance:
+                      </span>
+                      <span className="text-sm">
+                        {formatEther(balance)} tokens
+                      </span>
+                    </div>
+                  )}
+
+                  {contractTotalAmount && (
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Total Amount:</span>
+                      <span className="text-sm">
+                        {formatEther(contractTotalAmount)} tokens
+                      </span>
+                    </div>
+                  )}
+
+                  {claimDeadline && (
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">
+                        Claim Deadline:
+                      </span>
+                      <span className="text-sm">
+                        {new Date(
+                          Number(claimDeadline) * 1000
+                        ).toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+
+                  {unlockTimestamp && (
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Unlock Time:</span>
+                      <span className="text-sm">
+                        {new Date(
+                          Number(unlockTimestamp) * 1000
+                        ).toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {hash && (
                 <div className="bg-gray-50 rounded-lg p-4">
