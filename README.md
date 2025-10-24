@@ -30,6 +30,7 @@
 
 ## 🏗️ System Architecture
 
+### High-Level Architecture
 ```
 Next.js 16 DApp (App Router + API Routes)
 │
@@ -48,6 +49,26 @@ Next.js 16 DApp (App Router + API Routes)
 ├── 🎨 Modern UI (TailwindCSS + RainbowKit + Wagmi)
 └── 📱 Mobile-responsive design
 ```
+
+### Smart Contract Interaction Flow
+
+The following diagram illustrates the complete smart contract interaction workflow:
+
+![Smart Contract Interaction Diagram](./smart-contract/assets/interaction_diagram.png)
+
+**Key Components:**
+
+- **🏭 AirdropFactory Contract** - Deploys and manages airdrop campaigns
+- **🪙 MerkleAirdrop Implementation** - Core logic for individual airdrops
+- **🔗 Proxy (Clone) Contracts** - Gas-efficient EIP-1167 minimal proxies
+- **👤 Users** - Interact with the system to create and claim airdrops
+
+**Workflow:**
+1. **User** calls `createAirdropAndFund()` on **Factory**
+2. **Factory** deploys **Proxy Clone** using EIP-1167 pattern
+3. **Proxy Clone** delegates calls to **MerkleAirdrop Implementation**
+4. **Users** claim tokens by calling `claim()` on **Proxy Clone**
+5. **Proxy Clone** verifies Merkle proofs and transfers tokens
 
 ---
 
