@@ -20,6 +20,151 @@ The **Airdrop Builder Smart Contracts** implement a gas-efficient, secure, and d
 
 ---
 
+## 🏗️ System Architecture & Workflow
+
+### Complete Airdrop Flow
+
+The following diagrams illustrate the complete airdrop system architecture and workflow:
+
+#### 1. System Overview
+![System Workflow](./assets/system_workflow.png)
+
+The **System Workflow** shows the high-level architecture where:
+- **AirdropFactory** deploys clone proxies using OpenZeppelin's Clones library
+- **Participants** interact with clone proxies to claim tokens with Merkle proofs
+- **Clone Proxies** delegate calls to the shared **MerkleAirdrop** implementation
+- **ERC20 Token Contract** provides the tokens for distribution
+
+#### 2. Factory & Participants Flow
+![Airdrop Factory and Participants](./assets/airdrop_factory_and_participants.png)
+
+**Left Column - AirdropFactory Process:**
+1. **`createAirdropAndFund(token, merkleRoot, metadataURI, totalAmount)`** - Factory function call
+2. **Uses OpenZeppelin Clones.clone()** - Deploys minimal proxy
+3. **Deploys minimal proxy (clone)** - Gas-efficient deployment
+4. **Initializes new MerkleAirdrop instance** - Sets up airdrop parameters
+5. **Transfers totalAmount of ERC20 tokens** - Funds the airdrop
+
+**Right Column - Participants Process:**
+1. **User with valid Merkle proof** - Eligible participant
+2. **Front-end fetches proof + index from IPFS metadata** - Retrieves claim data
+3. **User calls claim(index, account, amount, merkleProof)** - Submits claim
+4. **Contract verifies leaf via MerkleProof.verify()** - Validates eligibility
+5. **Bitmap updated → tokens transferred** - Prevents double claims and transfers tokens
+
+#### 3. Clone Proxies Architecture
+![Clone Proxies](./assets/clone_proxies.png)
+
+**Clone Proxies Pattern:**
+- **Multiple Proxy Instances** (P1, P2, P3) - Each represents a separate airdrop
+- **Delegate Calls to MerkleAirdrop** - All proxies use shared implementation
+- **Independent State** - Each clone maintains its own:
+  - `merkleRoot` - Unique to each airdrop
+  - `balances` - Token balances for each airdrop
+  - `claimedBitMap` - Claim status for each airdrop
+
+#### 4. MerkleAirdrop & ERC20 Integration
+![MerkleAirdrop and ERC20 Token](./assets/merkle_airdrop_and_erc20_token.png)
+
+**MerkleAirdrop Contract:**
+- **Stores core logic only (no state)** - Stateless implementation
+- **Functions: claim(), withdrawRemaining(), isClaimed()** - Core functionality
+- **Uses MerkleProof.verify()** - Cryptographic verification
+- **Tracks claims via bitmap (256 bits per slot)** - Efficient storage
+- **7-day lock for withdrawal** - Security mechanism
+
+**ERC20 Token Contract:**
+- **Token used for airdrop rewards** - The distributed asset
+- **Factory or owner funds clone airdrop** - Initial funding
+- **Clone transfers tokens to users on claim** - Token distribution
+
+### Key Benefits of This Architecture
+
+1. **Gas Efficiency** - EIP-1167 minimal proxies reduce deployment costs by ~95%
+2. **Scalability** - Unlimited airdrops with shared implementation
+3. **Security** - Merkle proofs prevent unauthorized claims
+4. **Decentralization** - No central authority required
+5. **Transparency** - All operations are on-chain and verifiable
+
+### Detailed Technical Flow
+
+#### Phase 1: Airdrop Creation
+```mermaid
+sequenceDiagram
+    participant Creator
+    participant Factory
+    participant Clone
+    participant Token
+    participant IPFS
+
+    Creator->>IPFS: Upload CSV → Generate Merkle Tree
+    IPFS-->>Creator: Return metadataURI + merkleRoot
+    Creator->>Token: Approve Factory to spend tokens
+    Creator->>Factory: createAirdropAndFund(token, merkleRoot, metadataURI, totalAmount)
+    Factory->>Clone: Deploy minimal proxy
+    Factory->>Clone: Initialize with parameters
+    Factory->>Token: Transfer tokens to clone
+    Factory-->>Creator: Return airdrop address
+```
+
+#### Phase 2: Token Claiming
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant Clone
+    participant Token
+    participant IPFS
+
+    User->>Frontend: Connect wallet
+    Frontend->>IPFS: Fetch claims.json using metadataURI
+    IPFS-->>Frontend: Return user's claim data (index, amount, proof)
+    Frontend->>Clone: claim(index, account, amount, merkleProof)
+    Clone->>Clone: Verify Merkle proof
+    Clone->>Clone: Check if already claimed
+    Clone->>Clone: Update claimed bitmap
+    Clone->>Token: Transfer tokens to user
+    Clone-->>User: Emit Claimed event
+```
+
+#### Phase 3: Withdrawal (After 7 Days)
+```mermaid
+sequenceDiagram
+    participant Creator
+    participant Clone
+    participant Token
+
+    Creator->>Clone: withdrawRemaining()
+    Clone->>Clone: Check if 7 days passed
+    Clone->>Clone: Get remaining balance
+    Clone->>Token: Transfer remaining tokens to creator
+    Clone-->>Creator: Emit Withdrawn event
+```
+
+### Security Mechanisms
+
+1. **Merkle Proof Verification**
+   - Each claim requires a valid Merkle proof
+   - Prevents unauthorized token claims
+   - Efficient on-chain verification
+
+2. **Double-Claim Prevention**
+   - Bitmap tracks claimed status (1 bit per claim)
+   - Gas-efficient storage pattern
+   - Immutable claim records
+
+3. **Time-Locked Withdrawals**
+   - 7-day lock prevents immediate rug pulls
+   - Creator cannot withdraw before lock expires
+   - Transparent withdrawal timeline
+
+4. **Access Control**
+   - Only airdrop owner can withdraw remaining tokens
+   - Only eligible users can claim tokens
+   - No central authority required
+
+---
+
 ## 🏗️ Contract Architecture
 
 ### Core Contracts
@@ -71,14 +216,82 @@ smart-contract/
 │   ├── sepolia_deployment.json      # Deployment information
 │   └── sepolia_airdrop_*.json       # Individual airdrop deployments
 ├── test-data/
-│   ├── airdrop.csv                  # Sample CSV data
-│   ├── claims.json                  # Generated claims
-│   └── merkle-data.json             # Merkle tree data
+│   ├── airdrop.csv                  # Original CSV upload format
+│   ├── claims.json                  # IPFS metadata with proofs
+│   ├── individual-claims.json       # Individual user claim data
+│   └── merkle-data.json             # Merkle tree generation data
 ├── artifacts/                       # Compiled contracts
 ├── cache/                          # Hardhat cache
 ├── typechain-types/                # TypeScript types
 └── hardhat.config.ts               # Hardhat configuration
 ```
+
+---
+
+## 📊 Data Flow & File Formats
+
+### CSV Upload → Merkle Tree → IPFS → Smart Contract
+
+The system processes airdrop data through several stages:
+
+#### 1. Original CSV Format (`airdrop.csv`)
+```csv
+address,amount,index
+0x1234567890123456789012345678901234567890,100.0,0
+0x2345678901234567890123456789012345678901,200.0,1
+0x3456789012345678901234567890123456789012,300.0,2
+```
+
+#### 2. Generated Claims Data (`claims.json`)
+```json
+{
+  "metadata": {
+    "name": "Test Airdrop Campaign",
+    "merkleRoot": "0x6d43c20abc208559dd970943ba3fffff9c66d3c9ec1804e93958db82a377c2d8",
+    "totalAmount": "2125000000000000000000",
+    "claimDeadline": 1761812918,
+    "unlockTimestamp": 1761812918
+  },
+  "claims": [
+    {
+      "index": 0,
+      "account": "0x1234567890123456789012345678901234567890",
+      "amount": "100000000000000000000",
+      "proof": ["0x24920223f30fcc619dfc6409240274b48e55ef890a54cae81f4609141c445137"]
+    }
+  ]
+}
+```
+
+#### 3. Individual Claim Data (`individual-claims.json`)
+```json
+[
+  {
+    "index": 0,
+    "account": "0x1234567890123456789012345678901234567890",
+    "amount": "100000000000000000000",
+    "proof": ["0x24920223f30fcc619dfc6409240274b48e55ef890a54cae81f4609141c445137"]
+  }
+]
+```
+
+#### 4. Merkle Tree Data (`merkle-data.json`)
+```json
+{
+  "merkleRoot": "0x6d43c20abc208559dd970943ba3fffff9c66d3c9ec1804e93958db82a377c2d8",
+  "totalAmount": "2125000000000000000000",
+  "totalRecipients": 10,
+  "leaves": ["0x...", "0x..."]
+}
+```
+
+### Data Processing Pipeline
+
+1. **CSV Upload** → Parse addresses and amounts
+2. **Merkle Tree Generation** → Create tree with keccak256(abi.encodePacked(index, account, amount))
+3. **IPFS Upload** → Upload claims.json to get metadataURI
+4. **Smart Contract Deployment** → Use merkleRoot and metadataURI
+5. **User Claims** → Frontend fetches individual proof from IPFS
 
 ---
 
